@@ -224,39 +224,6 @@ static uint8_t map_key_position_to_led_index(uint8_t col, uint8_t row) {
   }
   return -1;
 }
-||||||| parent of 18dd1c5ac... rective lighting woirking.
-=======
-#include "quantum.h"
-#include "led_matrix.h"
-
-extern issi3733_led_t *led_cur;
-extern uint8_t led_per_run;
-extern issi3733_led_t *lede;
-extern issi3733_led_t led_map[];
-
-static uint16_t last_boost_update;
-static uint8_t led_boosts[ISSI3733_LED_COUNT];
-static uint8_t led_boost_index;
-static uint8_t led_cur_index;
-
-float led_boost_decay = 0.87;
-float led_boost_propagate = 0.45;
-uint8_t led_boost_refresh_ms = 50;
-
-#define LED_BOOST_REFRESH_INTERVAL_IN_MS 40
-#define LED_BOOST_DECAY 0.8
-#define LED_BOOST_PROPAGATE 0.5
-#define LED_BOOST_PEAK 100
-
-#define MIN_RGB 0x000000
-#define MIN_R (MIN_RGB >> 16 & 0xff)
-#define MIN_G (MIN_RGB >> 8 & 0xff)
-#define MIN_B (MIN_RGB & 0xff)
-
-#define MAX_RGB 0xff0000
-#define MAX_R (MAX_RGB >> 16 & 0xff)
-#define MAX_G (MAX_RGB >> 8 & 0xff)
-#define MAX_B (MAX_RGB & 0xff)
 
 uint32_t underglow_rgb = 0x000000;
 #define UNDERGLOW_RGB 0x000000
@@ -287,10 +254,17 @@ static const keypos_t LED_TO_KEY_MAP[KEY_LED_COUNT] = {
   KP(0, 4), KP(1, 4), KP(2, 4),                               KP(6, 4),                               KP(10, 4), KP(11, 4), KP(12, 4), KP(13, 4), KP(14, 4),
 };
 
+static const uint8_t CONST_LED_MAP[MATRIX_ROWS][MATRIX_COLS] = {
+    { 1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1 }, 
+    { 1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1 },
+    { 1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, __,  1,  1 },
+    { 1, __,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1 },
+    { 1,  1,  1, __, __, __,  0, __, __, __,  1,  1,  1,  1,  1 }
+};
 
 static void update_led_boosts(void);
 static void update_led_cur_rgb_values(void);
-static void set_nearest_led_to_max(uint8_t col, uint8_t row);
+static void set_nearest_led_to_max(uint8_t led_index);
 static uint8_t calculate_new_color_component_value(uint8_t max, uint8_t min);
 static void calculate_new_led_boosts(uint8_t new_led_boosts[]);
 static uint8_t calculate_new_led_boost_at(int index);
@@ -330,7 +304,19 @@ void led_matrix_run(void) {
 void rgb_matrix_record_key_press(keyrecord_t *record) {
   if (record->event.pressed) {
     keypos_t key = record->event.key;
-    set_nearest_led_to_max(key.col, key.row);
+    uint8_t led_index = map_key_position_to_led_index(key.col, key.row);
+
+    if (CONST_LED_MAP[key.row][key.col] == 1 ) {
+        max_r = 0x10;
+        max_g = 0x10;
+        max_b = 0xff;
+    } else {
+        max_r = 0xff;
+        max_g = 0x00;
+        max_b = 0x00;
+    }
+
+    set_nearest_led_to_max(led_index);
   }
 }
 
@@ -346,19 +332,25 @@ static void update_led_boosts(void) {
 }
 
 static void update_led_cur_rgb_values(void) {
+  //keypos_t led_keypos = LED_TO_KEY_MAP[led_cur->scan];
+
   if (led_cur->scan == UNDERGLOW_SCAN_CODE) {
     *led_cur->rgb.r = UNDERGLOW_R;
     *led_cur->rgb.g = UNDERGLOW_G;
     *led_cur->rgb.b = UNDERGLOW_B;
+  //} else if ( CONST_LED_MAP[led_keypos.row][led_keypos.col] == 1 ) {
+      //*led_cur->rgb.r = 0xff;
+      //*led_cur->rgb.g = 0xff;
+      //*led_cur->rgb.b = 0x00;
   } else {
-    *led_cur->rgb.r = calculate_new_color_component_value(MAX_R, MIN_R);
-    *led_cur->rgb.g = calculate_new_color_component_value(MAX_G, MIN_G);
-    *led_cur->rgb.b = calculate_new_color_component_value(MAX_B, MIN_B);
+    *led_cur->rgb.r = calculate_new_color_component_value(max_r, MIN_R);
+    *led_cur->rgb.g = calculate_new_color_component_value(max_g, MIN_G);
+    *led_cur->rgb.b = calculate_new_color_component_value(max_b, MIN_B);
   }
 }
 
-static void set_nearest_led_to_max(uint8_t col, uint8_t row) {
-  uint8_t led_index = map_key_position_to_led_index(col, row);
+static void set_nearest_led_to_max(uint8_t led_index) {
+  //uint8_t led_index = map_key_position_to_led_index(col, row);
   if (led_index >= 0 && led_index < ISSI3733_LED_COUNT) {
     led_boosts[led_index] = LED_BOOST_PEAK;
   }
