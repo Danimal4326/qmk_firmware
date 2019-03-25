@@ -30,7 +30,7 @@ enum alt_keycodes {
 };
 
 #define TG_NKRO MAGIC_TOGGLE_NKRO //Toggle 6KRO / NKRO mode
-#define ______ KC_TRNS
+//#define ______ KC_TRNS
 #define _BL 0
 #define _FL 1
 #define _KB 2
@@ -46,18 +46,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        KC_LCTL,        KC_LGUI,  KC_LALT,                                KC_SPC,                                 KC_RGUI,  MO(_FL),  KC_LEFT,  KC_DOWN,  KC_RGHT  \
     ),
     [_FL] = LAYOUT(
-       KC_GRV,         KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   ______,   KC_MUTE, \
-       ______,         ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   KC_PSCR,  KC_SLCK,  KC_PAUS,  ______,   KC_END, \
-       ______,         ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,             ______,   LSFT(KC_INS), \
-       ______,         ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,             KC_VOLU,  ______, \
-       ______,         ______,   ______,                                 KC_MPLY,                                MO(_KB),  ______,   KC_MPRV,  KC_VOLD,  KC_MNXT  \
+       KC_GRV,         KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   _______,  KC_MUTE, \
+       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  KC_PSCR,  KC_SLCK,  KC_PAUS,  _______,  KC_END, \
+       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,            _______,  LSFT(KC_INS), \
+       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,            KC_VOLU,  _______, \
+       _______,        KC_NO,    _______,                                KC_MPLY,                                MO(_KB),  _______,  KC_MPRV,  KC_VOLD,  KC_MNXT  \
     ),
     [_KB] = LAYOUT(
-       ______,         ______,  ______,    ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______,   ______, \
-       L_T_BR,         L_PTN,   L_BRI,     L_PSI,    L_DCY_UP, L_PRP_UP, L_REF_UP, U_T_AUTO, U_T_AGCR, ______,   ______,   ______,   ______,   ______,   ______, \
-       L_T_PTD,        L_PTP,   L_BRD,     L_PSD,    L_DCY_DN, L_PRP_DN, L_REF_DN, ______,   ______,   ______,   ______,   ______,             ______,   ______, \
-       ______,         L_T_MD,  L_T_ONF,   ______,   ______,   MD_BOOT,  TG_NKRO,  ______,   ______,   ______,   ______,   ______,             ______,   ______, \
-       ______,         ______,  ______,                                  ______,                                 ______,   ______,   ______,   ______,   ______  \
+       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______, \
+       _______,        _______,  L_BRI,    _______,  L_DCY_UP, L_PRP_UP, L_REF_UP, U_T_AUTO, U_T_AGCR, _______,  _______,  _______,  _______,  _______,  _______, \
+       _______,        _______,  L_BRD,    _______,  L_DCY_DN, L_PRP_DN, L_REF_DN, _______,  _______,  _______,  _______,  _______,            _______,  _______, \
+       _______,        _______,  L_T_ONF,  _______,  _______,  MD_BOOT,  TG_NKRO,  _______,  _______,  _______,  _______,  _______,            _______,  _______, \
+       _______,        KC_NO,    _______,                                _______,                                _______,  _______,  _______,  _______,  _______  \
     ),
 };
 
@@ -75,14 +75,23 @@ void matrix_init_user(void) {
 void matrix_scan_user(void) {
 };
 
+bool locked = false;
+
 #define MODS_SHIFT  (get_mods() & MOD_BIT(KC_LSHIFT)    || get_mods() & MOD_BIT(KC_RSHIFT)) 
 #define MODS_CTRL   (get_mods() & MOD_BIT(KC_LCTL)      || get_mods() & MOD_BIT(KC_RCTRL))
 #define MODS_ALT    (get_mods() & MOD_BIT(KC_LALT)      || get_mods() & MOD_BIT(KC_RALT))
+#define MODS_GUI    (get_mods() & MOD_BIT(KC_LGUI)      || get_mods() & MOD_BIT(KC_RGUI))
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     static uint32_t key_timer;
 
-    rgb_matrix_record_key_press(record);
+    rgb_matrix_record_key_press(keycode, record);
+
+    if ( (record->event.pressed) && locked) {
+        led_enabled = 1;
+        I2C3733_Control_Set(led_enabled);
+        locked = false;
+    }
 
     switch (keycode) {
        case L_DCY_UP:
@@ -236,6 +245,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             }
             return false;
+        case KC_L:
+            // Turn off LEDs when locking - re-enable on first keypress
+            if (record->event.pressed && MODS_GUI && MODS_ALT && led_enabled) {
+                led_enabled = 0;
+                I2C3733_Control_Set(led_enabled);
+                locked = true;
+            return true;
+            }
         default:
             return true; //Process all other keycodes normally
     }
@@ -245,15 +262,19 @@ uint32_t layer_state_set_user(uint32_t state) {
     switch (biton32(state)) {
         case _BL:
             underglow_rgb = 0x000000;
+            layer = _BL;
             break;
         case _FL:
             underglow_rgb = 0x000010;
+            layer = _FL;
             break;
         case _KB:
             underglow_rgb = 0x100000;
+            layer = _KB;
             break;
         default:
             underglow_rgb = 0x000000;
+            layer = _BL;
             break;
     }
     return state;

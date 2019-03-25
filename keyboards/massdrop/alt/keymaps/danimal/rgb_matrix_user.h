@@ -16,5 +16,6 @@ float       led_boost_decay;
 float       led_boost_propagate;
 uint8_t     led_boost_refresh_ms;
 uint32_t    underglow_rgb;
-
-void rgb_matrix_record_key_press(keyrecord_t *record);
+uint8_t     layer;
+uint8_t     mod_layer;
+void rgb_matrix_record_key_press(uint16_t keycode, keyrecord_t *record);
