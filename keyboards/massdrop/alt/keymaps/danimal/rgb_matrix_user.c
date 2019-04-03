@@ -102,7 +102,7 @@ static const rgb_t CONST_LED_MAP[][MATRIX_ROWS][MATRIX_COLS] = {
     { OFF,  OFF,  YEL,  OFF,  YEL,  YEL,  YEL,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  CYA,  OFF,  OFF,  ORN,  GRN,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  OFF,  OFF,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
+    { OFF,  OFF,  OFF,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  WHT,  WHT,  OFF,  OFF,  OFF }
     },
     [3] = {
     { OFF,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
@@ -123,7 +123,7 @@ static const rgb_t CONST_LED_MAP[][MATRIX_ROWS][MATRIX_COLS] = {
     { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  RED,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  WHT,  WHT,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
+    { OFF,  WHT,  WHT,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  WHT,  OFF,  OFF,  OFF,  OFF }
     },
 };
 
