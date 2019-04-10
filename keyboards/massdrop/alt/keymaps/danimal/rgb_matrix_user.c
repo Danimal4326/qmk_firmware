@@ -55,8 +55,8 @@ uint8_t mod_layer = 0;
 //   {58, 59, 60, __, __, __, 61, __, __, __, 62, 63, 64, 65, 66},
 // };
 
-static const uint8_t KEY_TO_LED_MAP[MATRIX_ROWS][MATRIX_COLS] = {
-  { __,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, __, __},
+static const int8_t KEY_TO_LED_MAP[MATRIX_ROWS][MATRIX_COLS] = {
+  {__,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, __, __},
   {__, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, __},
   {__, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, __, __, __},
   {__, __, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, __, __, __},
@@ -102,7 +102,7 @@ static const rgb_t CONST_LED_MAP[][MATRIX_ROWS][MATRIX_COLS] = {
     { OFF,  OFF,  YEL,  OFF,  YEL,  YEL,  YEL,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  CYA,  OFF,  OFF,  ORN,  GRN,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  OFF,  OFF,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  WHT,  WHT,  OFF,  OFF,  OFF }
+    { OFF,  OFF,  OFF,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
     },
     [3] = {
     { OFF,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
@@ -123,7 +123,7 @@ static const rgb_t CONST_LED_MAP[][MATRIX_ROWS][MATRIX_COLS] = {
     { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  RED,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  WHT,  WHT,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  WHT,  OFF,  OFF,  OFF,  OFF }
+    { OFF,  WHT,  WHT,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
     },
 };
 
@@ -147,7 +147,7 @@ static uint8_t calculate_new_led_boost_at(int index);
 static uint8_t get_propagated_boost_from_neighbors(int led_position);
 static uint8_t get_led_boost_at_keypos(uint8_t row, uint8_t col);
 static void set_new_led_boosts(uint8_t* new_led_boosts);
-static uint8_t map_key_position_to_led_index(uint8_t col, uint8_t row);
+static int8_t map_key_position_to_led_index(uint8_t col, uint8_t row);
 
 
 void rgb_matrix_init_user(void) {
@@ -266,7 +266,7 @@ static void update_led_cur_rgb_values(void) {
       curr_layer = mod_layer;
     else
       curr_layer = layer; 
-
+    
     if (led_cur->scan == UNDERGLOW_SCAN_CODE) {
         *led_cur->rgb.r = UNDERGLOW_R;
         *led_cur->rgb.g = UNDERGLOW_G;
@@ -283,7 +283,8 @@ static void update_led_cur_rgb_values(void) {
 }
 
 static void set_nearest_led_to_max(uint8_t col, uint8_t row) {
-  uint8_t led_index = map_key_position_to_led_index(col, row);
+  int8_t led_index = map_key_position_to_led_index(col, row);
+
   if (led_index >= 0 && led_index < ISSI3733_LED_COUNT) {
     led_boosts[led_index] = LED_BOOST_PEAK;
   }
@@ -330,7 +331,7 @@ static uint8_t get_led_boost_at_keypos(uint8_t row, uint8_t col) {
   if (row < 0 || row >= MATRIX_ROWS || col < 0 || col >= MATRIX_COLS) {
     return 0;
   }
-  uint8_t led_index = KEY_TO_LED_MAP[row][col];
+  int8_t led_index = KEY_TO_LED_MAP[row][col];
   if (led_index < 0) {
     return 0;
   }
@@ -343,7 +344,7 @@ static void set_new_led_boosts(uint8_t* new_led_boosts) {
   }
 }
 
-static uint8_t map_key_position_to_led_index(uint8_t col, uint8_t row) {
+static int8_t map_key_position_to_led_index(uint8_t col, uint8_t row) {
   if (row >= 0 && row < MATRIX_ROWS && col >= 0 && col < MATRIX_COLS) {
     return KEY_TO_LED_MAP[row][col];
   }
