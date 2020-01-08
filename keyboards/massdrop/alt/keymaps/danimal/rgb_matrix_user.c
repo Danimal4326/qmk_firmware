@@ -81,10 +81,11 @@ typedef struct rbg_s {
 #define PUR RGB(0x80, 0x00, 0x80)
 #define CYA RGB(0x00, 0x80, 0x80)
 #define WHT RGB(0xB0, 0xB0, 0xB0)
+#define NUM RGB(0xC0, 0xC0, 0x00)
 
 static const rgb_t CONST_LED_MAP[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = {
-    { RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU,  BLU }, 
+    { RED,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  NUM,  BLU,  BLU }, 
     { BLU,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU },
     { RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  PUR,  BLU },
     { BLU,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU,  YEL,  BLU },
