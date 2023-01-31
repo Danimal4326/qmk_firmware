@@ -1,5 +1,6 @@
 #include "quantum.h"
 #include "led_matrix.h"
+#include "usb/usb2422.h"
 
 extern issi3733_led_t *led_cur;
 extern uint8_t led_per_run;
@@ -12,20 +13,20 @@ static uint8_t led_boost_index;
 static uint8_t led_cur_index;
 
 float led_boost_decay = 0.87;
-float led_boost_propagate = 0.45;
-uint8_t led_boost_refresh_ms = 50;
+float led_boost_propagate = 0.70;
+uint8_t led_boost_refresh_ms = 80;
 
 #define LED_BOOST_REFRESH_INTERVAL_IN_MS 40
 #define LED_BOOST_DECAY 0.8
 #define LED_BOOST_PROPAGATE 0.5
 #define LED_BOOST_PEAK 100
 
-#define MIN_RGB 0x000000
+#define MIN_RGB 0x00A000
 #define MIN_R (MIN_RGB >> 16 & 0xff)
 #define MIN_G (MIN_RGB >> 8 & 0xff)
 #define MIN_B (MIN_RGB & 0xff)
 
-#define MAX_RGB 0xff0000
+#define MAX_RGB 0xff00ff
 #define MAX_R (MAX_RGB >> 16 & 0xff)
 #define MAX_G (MAX_RGB >> 8 & 0xff)
 #define MAX_B (MAX_RGB & 0xff)
@@ -73,57 +74,61 @@ typedef struct rbg_s {
 #define RGB(x, y, z) { .r = x, .g = y, .b = z, .active = 1}
 #define OFF {.active = 0}
 #define ___ {.active = 0}
-#define RED RGB(0x90, 0x00, 0x00)
-#define BLU RGB(0x00, 0x00, 0x80)
-#define GRN RGB(0x00, 0x80, 0x00)
-#define YEL RGB(0x80, 0x80, 0x00)
-#define ORN RGB(0x70, 0x20, 0x00)
-#define PUR RGB(0x80, 0x00, 0x80)
-#define CYA RGB(0x00, 0x80, 0x80)
-#define WHT RGB(0xB0, 0xB0, 0xB0)
+#define RED RGB(0xF0, 0x00, 0x00)
+#define BLU RGB(0x00, 0x00, 0xF0)
+#define GRN RGB(0x00, 0xC0, 0x00)
+#define YEL RGB(0xC0, 0xC0, 0x00)
+#define ORN RGB(0xFF, 0x80, 0x00)
+#define PUR RGB(0xC0, 0x00, 0xC0)
+#define CYA RGB(0x00, 0xC0, 0xC0)
+#define WHT RGB(0xF0, 0xF0, 0xF0)
+#define MAX RGB(0xFF, 0x00, 0x00)
 
-static const rgb_t CONST_LED_MAP[][MATRIX_ROWS][MATRIX_COLS] = {
+static const rgb_t CONST_LED_MAP_PORT1[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = {
-    { RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU,  BLU }, 
-    { BLU,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU },
-    { RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  PUR,  BLU },
-    { BLU,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU,  YEL,  BLU },
-    { RED,  RED,  RED,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  RED,  WHT,  YEL,  YEL,  YEL }
+    { RED,  MAX,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  GRN,  GRN,  BLU,  BLU }, 
+    { BLU,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU },
+    { RED,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  ___,  PUR,  BLU },
+    { BLU,  ___,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU,  YEL,  BLU },
+    { RED,  RED,  RED,  ___,  ___,  ___,  GRN,  ___,  ___,  ___,  RED,  WHT,  YEL,  YEL,  YEL }
     },
     [1] = {
-    { BLU,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  BLU },
+    { GRN,  MAX,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
+    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
     { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
     { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
     { OFF,  OFF,  OFF,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
     },
     [2] = {
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
+    { OFF,  MAX,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
     { OFF,  OFF,  YEL,  OFF,  YEL,  YEL,  YEL,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
+    { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  RED,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  CYA,  OFF,  OFF,  ORN,  GRN,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  OFF,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
     },
-    [3] = {
-    { OFF,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
-    { RED,  OFF,  GRN,  GRN,  PUR,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { GRN,  YEL,  GRN,  RED,  PUR,  OFF,  PUR,  YEL,  YEL,  YEL,  YEL,  OFF,  ___,  RED,  OFF },
-    { WHT,  ___,  RED,  OFF,  OFF,  PUR,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  WHT,  YEL,  OFF },
-    { OFF,  WHT,  WHT,  ___,  ___,  ___,  YEL,  ___,  ___,  ___,  WHT,  OFF,  YEL,  YEL,  YEL }
+};
+
+static const rgb_t CONST_LED_MAP_PORT2[][MATRIX_ROWS][MATRIX_COLS] = {
+    [0] = {
+    { RED,  ORN,  MAX,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  GRN,  GRN,  BLU,  BLU }, 
+    { BLU,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU },
+    { RED,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  ___,  PUR,  BLU },
+    { BLU,  ___,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU,  YEL,  BLU },
+    { RED,  RED,  RED,  ___,  ___,  ___,  GRN,  ___,  ___,  ___,  RED,  WHT,  YEL,  YEL,  YEL }
     },
-    [4] = {
-    { OFF,  BLU,  BLU,  BLU,  BLU,  BLU,  BLU,  BLU,  BLU,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
-    { OFF,  RED,  OFF,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { PUR,  YEL,  OFF,  OFF,  OFF,  OFF,  OFF,  BLU,  BLU,  BLU,  BLU,  OFF,  ___,  OFF,  OFF },
-    { WHT,  ___,  OFF,  OFF,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  WHT,  BLU,  OFF },
-    { OFF,  WHT,  OFF,  ___,  ___,  ___,  GRN,  ___,  ___,  ___,  OFF,  OFF,  BLU,  BLU,  BLU }
+    [1] = {
+    { GRN,  RED,  MAX,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
+    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
+    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
+    { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
+    { OFF,  OFF,  OFF,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
     },
-    [5] = {
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  RED,  OFF,  OFF,  ___,  OFF,  OFF },
-    { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
-    { OFF,  WHT,  WHT,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
+    [2] = {
+    { OFF,  OFF,  MAX,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
+    { OFF,  OFF,  YEL,  OFF,  YEL,  YEL,  YEL,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
+    { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  RED,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
+    { OFF,  ___,  OFF,  CYA,  OFF,  OFF,  ORN,  GRN,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
+    { OFF,  OFF,  OFF,  ___,  ___,  ___,  OFF,  ___,  ___,  ___,  OFF,  OFF,  OFF,  OFF,  OFF }
     },
 };
 
@@ -151,12 +156,13 @@ static uint8_t map_key_position_to_led_index(uint8_t col, uint8_t row);
 
 
 void rgb_matrix_init_user(void) {
-  for (int i = 0; i < ISSI3733_LED_COUNT; i++) {
-    led_boosts[i] = 0;
-  }
-  last_boost_update = timer_read();
-  led_boost_index = 0;
-  led_cur_index = 0;
+    for (int i = 0; i < ISSI3733_LED_COUNT; i++) {
+        led_boosts[i] = 0;
+    }
+    last_boost_update = timer_read();
+    led_boost_index = 0;
+    led_cur_index = 0;
+
 }
 
 void led_matrix_run(void) {
@@ -178,70 +184,6 @@ void led_matrix_run(void) {
 }
 
 void rgb_matrix_record_key_press(uint16_t keycode, keyrecord_t *record) {
-  uint8_t mods = get_mods();
-  if (record->event.pressed) {
-     switch (keycode) {
-      case KC_LGUI:
-      case KC_RGUI:
-        if (!mods)
-          mod_layer = 3;
-        else if ( (mods & MOD_MASK_SHIFT) && !(mods & ~MOD_MASK_SHIFT) )
-          mod_layer = 4;
-        else if ( (mods & MOD_MASK_ALT) && !(mods & ~MOD_MASK_ALT) )
-          mod_layer = 5;
-        else
-          mod_layer = 0;
-        break;
-     case KC_LSFT:
-     case KC_RSFT:
-        if ( (mods & MOD_MASK_GUI) && !(mods & ~MOD_MASK_GUI) )
-          mod_layer = 4;
-        else
-          mod_layer = 0;
-        break;
-     case KC_LALT:
-     case KC_RALT:
-        if ( (mods & MOD_MASK_GUI) && !(mods & ~MOD_MASK_GUI) )
-          mod_layer = 5;
-        else
-          mod_layer = 0;
-        break;
-      default:
-        mod_layer = 0;
-        break;
-     }
-  } else if ( IS_RELEASED(record->event) ) {
-    mods = get_mods();
-    switch (keycode) {
-      case KC_LGUI:
-      case KC_RGUI:
-        mod_layer = 0;
-        break;
-      case KC_LSFT:
-      case KC_RSFT:
-        if ( (mods & MOD_MASK_GUI) && !(mods & ~(MOD_MASK_GUI | MOD_MASK_SHIFT) ) )
-          mod_layer = 3;
-        else if ( (mods & MOD_MASK_GUI) && (mods & MOD_MASK_ALT) )
-          mod_layer = 5;
-        break;
-      case KC_LALT:
-      case KC_RALT:
-        if ( (mods & MOD_MASK_GUI) && !(mods & ~(MOD_MASK_GUI | MOD_MASK_ALT) ) )
-          mod_layer = 3;
-        else if ( (mods & MOD_MASK_GUI) && (mods & MOD_MASK_SHIFT) )
-          mod_layer = 4;
-        break;
-      default:
-        if ( (mods & MOD_MASK_GUI) && (mods & MOD_MASK_ALT) )
-          mod_layer = 5;
-        else if ( (mods & MOD_MASK_GUI) && (mods & MOD_MASK_SHIFT) )
-          mod_layer = 4;
-        else if ( (mods & MOD_MASK_GUI) )
-          mod_layer = 3;
-        break;
-    }
-  }
-
   if (record->event.pressed) {
     keypos_t key = record->event.key;
     set_nearest_led_to_max(key.col, key.row);
@@ -261,24 +203,30 @@ static void update_led_boosts(void) {
 
 static void update_led_cur_rgb_values(void) {
     keypos_t led_keypos = LED_TO_KEY_MAP[led_cur->scan];
-    uint8_t  curr_layer;
-    if (layer == 0)
-      curr_layer = mod_layer;
-    else
-      curr_layer = layer; 
 
     if (led_cur->scan == UNDERGLOW_SCAN_CODE) {
         *led_cur->rgb.r = UNDERGLOW_R;
         *led_cur->rgb.g = UNDERGLOW_G;
         *led_cur->rgb.b = UNDERGLOW_B;
+    /*
     } else if ( ( CONST_LED_MAP[curr_layer][led_keypos.row][led_keypos.col].active == 1 ) ) {
         *led_cur->rgb.r = CONST_LED_MAP[curr_layer][led_keypos.row][led_keypos.col].r;
         *led_cur->rgb.g = CONST_LED_MAP[curr_layer][led_keypos.row][led_keypos.col].g;
         *led_cur->rgb.b = CONST_LED_MAP[curr_layer][led_keypos.row][led_keypos.col].b;
+    */
     } else {
-        *led_cur->rgb.r = calculate_new_color_component_value(max_r, MIN_R);
-        *led_cur->rgb.g = calculate_new_color_component_value(max_g, MIN_G);
-        *led_cur->rgb.b = calculate_new_color_component_value(max_b, MIN_B);
+        if (usb_host_port == USB_HOST_PORT_1)
+        {
+            *led_cur->rgb.r = calculate_new_color_component_value(max_r, CONST_LED_MAP_PORT1[layer][led_keypos.row][led_keypos.col].r);
+            *led_cur->rgb.g = calculate_new_color_component_value(max_g, CONST_LED_MAP_PORT1[layer][led_keypos.row][led_keypos.col].g);
+            *led_cur->rgb.b = calculate_new_color_component_value(max_b, CONST_LED_MAP_PORT1[layer][led_keypos.row][led_keypos.col].b);
+        }
+        else
+        {
+            *led_cur->rgb.r = calculate_new_color_component_value(max_r, CONST_LED_MAP_PORT2[layer][led_keypos.row][led_keypos.col].r);
+            *led_cur->rgb.g = calculate_new_color_component_value(max_g, CONST_LED_MAP_PORT2[layer][led_keypos.row][led_keypos.col].g);
+            *led_cur->rgb.b = calculate_new_color_component_value(max_b, CONST_LED_MAP_PORT2[layer][led_keypos.row][led_keypos.col].b);
+        }
     }
 }
 

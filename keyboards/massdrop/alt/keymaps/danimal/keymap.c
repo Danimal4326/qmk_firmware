@@ -1,5 +1,7 @@
 #include QMK_KEYBOARD_H
 #include "rgb_matrix_user.h"
+#include "adc.h"
+#include "spi.h"
 
 enum alt_keycodes {
     L_BRI = SAFE_RANGE, //LED Brightness Increase
@@ -16,6 +18,7 @@ enum alt_keycodes {
     L_T_PTD,            //LED Toggle Scrolling Pattern Direction
     U_T_AUTO,           //USB Extra Port Toggle Auto Detect / Always Active
     U_T_AGCR,           //USB Toggle Automatic GCR control
+    KVM_TOG,            //USB Toggle active port
     DBG_TOG,            //DEBUG Toggle On / Off
     DBG_MTRX,           //DEBUG Toggle Matrix Prints
     DBG_KBD,            //DEBUG Toggle Keyboard Prints
@@ -31,11 +34,16 @@ enum alt_keycodes {
 
 #define TG_NKRO MAGIC_TOGGLE_NKRO //Toggle 6KRO / NKRO mode
 //#define ______ KC_TRNS
+#define __NOP__ KC_NO
 #define _BL 0
 #define _FL 1
 #define _KB 2
 
 keymap_config_t keymap_config;
+
+void enable_port_1(void);
+void enable_port_2(void);
+void USB_swap_hosts(void);
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BL] = LAYOUT(
@@ -46,34 +54,40 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        KC_LCTL,        KC_LGUI,  KC_LALT,                                KC_SPC,                                 KC_RGUI,  MO(_FL),  KC_LEFT,  KC_DOWN,  KC_RGHT  \
     ),
     [_FL] = LAYOUT(
-       KC_GRV,         KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   _______,  KC_MUTE, \
-       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  KC_PSCR,  KC_SLCK,  KC_PAUS,  _______,  KC_END, \
-       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,            _______,  LSFT(KC_INS), \
-       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,            KC_VOLU,  _______, \
-       _______,        KC_NO,    _______,                                KC_MPLY,                                MO(_KB),  _______,  KC_MPRV,  KC_VOLD,  KC_MNXT  \
+       KC_GRV,         KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   __NOP__,  KC_MUTE, \
+       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  KC_PSCR,  KC_SLCK,  KC_PAUS,  __NOP__,  KC_END, \
+       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,            __NOP__,  LSFT(KC_INS), \
+       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,            KC_VOLU,  __NOP__, \
+       _______,        _______,  _______,                                KC_MPLY,                                MO(_KB),  _______,  KC_MPRV,  KC_VOLD,  KC_MNXT  \
     ),
     [_KB] = LAYOUT(
-       _______,        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______, \
-       _______,        _______,  L_BRI,    _______,  L_DCY_UP, L_PRP_UP, L_REF_UP, U_T_AUTO, U_T_AGCR, _______,  _______,  _______,  _______,  _______,  _______, \
-       _______,        _______,  L_BRD,    _______,  L_DCY_DN, L_PRP_DN, L_REF_DN, _______,  _______,  _______,  _______,  _______,            _______,  _______, \
-       _______,        _______,  L_T_ONF,  _______,  _______,  MD_BOOT,  TG_NKRO,  _______,  _______,  _______,  _______,  _______,            _______,  _______, \
-       _______,        KC_NO,    _______,                                _______,                                _______,  _______,  _______,  _______,  _______  \
+       __NOP__,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__, \
+       _______,        __NOP__,  L_BRI,    __NOP__,  L_DCY_UP, L_PRP_UP, L_REF_UP, U_T_AUTO, U_T_AGCR, __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__, \
+       _______,        __NOP__,  L_BRD,    __NOP__,  L_DCY_DN, L_PRP_DN, L_REF_DN, __NOP__,  KVM_TOG,  __NOP__,  __NOP__,  __NOP__,            __NOP__,  __NOP__, \
+       _______,        __NOP__,  L_T_ONF,  __NOP__,  __NOP__,  MD_BOOT,  TG_NKRO,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,            __NOP__,  __NOP__, \
+       _______,        _______,  _______,                                __NOP__,                                _______,  _______,  __NOP__,  __NOP__,  __NOP__  \
     ),
 };
 
 const uint16_t PROGMEM fn_actions[] = {
-
 };
+
+void keyboard_post_init_user(void) {
+  // Customise these values to desired behaviour
+  //debug_enable=true;
+  //debug_keyboard=true;
+  //debug_mouse=true;
+}
 
 // Runs just one time when the keyboard initializes.
 void matrix_init_user(void) {
     // Set default brightness
     //gcr_desired = 32;
+
 };
 
 // Runs constantly in the background, in a loop.
-void matrix_scan_user(void) {
-};
+void matrix_scan_user(void){};
 
 bool locked = false;
 
@@ -216,6 +230,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 TOGGLE_FLAG_AND_PRINT(usb_gcr_auto, "USB GCR auto mode");
             }
             return false;
+        case KVM_TOG:
+            if(record->event.pressed) {
+                USB_swap_hosts();
+            }
         case DBG_TOG:
             if (record->event.pressed) {
                 TOGGLE_FLAG_AND_PRINT(debug_enable, "Debug mode");
@@ -245,14 +263,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             }
             return false;
-        case KC_L:
-            // Turn off LEDs when locking - re-enable on first keypress
-            if (record->event.pressed && MODS_GUI && MODS_ALT && led_enabled) {
-                led_enabled = 0;
-                I2C3733_Control_Set(led_enabled);
-                locked = true;
-            return true;
-            }
         default:
             return true; //Process all other keycodes normally
     }
@@ -278,5 +288,98 @@ uint32_t layer_state_set_user(uint32_t state) {
             break;
     }
     return state;
+}
+
+void enable_port_1(void)
+{
+    sr_exp_data.bit.S_UP = 0;        //HOST to USBC-1
+    sr_exp_data.bit.S_DN1 = 1;       //EXTRA to USBC-2
+    sr_exp_data.bit.SRC_1 = 1;       //HOST on USBC-1
+    sr_exp_data.bit.SRC_2 = 0;       //EXTRA available on USBC-2
+
+    sr_exp_data.bit.E_VBUS_1 = 1;    //USBC-1 enable full power I/O
+    sr_exp_data.bit.E_VBUS_2 = 0;    //USBC-2 disable full power I/O
+
+    SR_EXP_WriteData();
+
+    sr_exp_data.bit.E_UP_N = 0;      //HOST enable
+
+    SR_EXP_WriteData();
+
+    usb_host_port = USB_HOST_PORT_1;    
+}
+
+void enable_port_2(void)
+{
+    sr_exp_data.bit.S_UP = 1;        //EXTRA to USBC-1
+    sr_exp_data.bit.S_DN1 = 0;       //HOST to USBC-2
+    sr_exp_data.bit.SRC_1 = 0;       //EXTRA available on USBC-1
+    sr_exp_data.bit.SRC_2 = 1;       //HOST on USBC-2
+
+    sr_exp_data.bit.E_VBUS_1 = 0;    //USBC-1 disable full power I/O
+    sr_exp_data.bit.E_VBUS_2 = 1;    //USBC-2 enable full power I/O
+
+    SR_EXP_WriteData();
+
+    sr_exp_data.bit.E_UP_N = 0;      //HOST enable
+
+    SR_EXP_WriteData();
+
+    usb_host_port = USB_HOST_PORT_2;
+}
+
+void USB_swap_hosts(void)
+{
+    //UP is upstream device (HOST)
+    //DN1 is downstream device (EXTRA)
+    //DN2 is keyboard (KEYB)
+
+
+    //usb_host_port = USB_HOST_PORT_UNKNOWN;
+#ifndef MD_BOOTLOADER
+    usb_extra_state = USB_EXTRA_STATE_UNKNOWN;
+#endif //MD_BOOTLOADER
+    sr_exp_data.bit.SRC_1 = 1;       //USBC-1 available for test
+    sr_exp_data.bit.SRC_2 = 1;       //USBC-2 available for test
+    sr_exp_data.bit.E_UP_N = 1;      //HOST disable
+    sr_exp_data.bit.E_DN1_N = 1;     //EXTRA disable
+    sr_exp_data.bit.E_VBUS_1 = 0;    //USBC-1 disable full power I/O
+    sr_exp_data.bit.E_VBUS_2 = 0;    //USBC-2 disable full power I/O
+
+    SR_EXP_WriteData();
+
+    wait_ms(250);
+
+    while ((v_5v = adc_get(ADC_5V)) < ADC_5V_START_LEVEL) {  }
+
+    v_con_1 = adc_get(ADC_CON1);
+    v_con_2 = adc_get(ADC_CON2);
+
+    v_con_1_boot = v_con_1;
+    v_con_2_boot = v_con_2;
+
+    if ( (v_con_1 > 200) &&  (v_con_2 > 200) )
+    {
+        if (usb_host_port == USB_HOST_PORT_2)
+            enable_port_1();
+        else
+            enable_port_2();
+    }
+    else if (v_con_1 > v_con_2)
+    {
+        enable_port_1();
+    }
+    else
+    {
+        enable_port_2();
+    }
+
+#ifndef MD_BOOTLOADER
+    usb_extra_state = USB_EXTRA_STATE_DISABLED;
+#endif //MD_BOOTLOADER
+
+    USB_reset();
+    USB_configure();
+
 }
 
