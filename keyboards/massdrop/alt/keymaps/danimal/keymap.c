@@ -30,6 +30,8 @@ enum alt_keycodes {
     L_PRP_DN,           // LED Propoagate Decrease
     L_REF_UP,           // LED Refresh Speed Increase 
     L_REF_DN,           // LED Refresh Speed Decrease
+    MAG_LGUI,           // LGUI on USB port 1, LCTL on port 2
+    MAG_LCTL,           // LCTL on USB port 1, LGUI on port 2 
 };
 
 #define TG_NKRO MAGIC_TOGGLE_NKRO //Toggle 6KRO / NKRO mode
@@ -51,14 +53,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        KC_TAB,         KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_LBRC,  KC_RBRC,  KC_BSLS,  KC_HOME, \
        CTL_T(KC_ESC),  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     KC_SCLN,  KC_QUOT,            KC_ENT,   KC_PGUP, \
        KC_LSFT,        KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  KC_RSFT,            KC_UP,    KC_PGDN, \
-       KC_LCTL,        KC_LGUI,  KC_LALT,                                KC_SPC,                                 KC_RGUI,  MO(_FL),  KC_LEFT,  KC_DOWN,  KC_RGHT  \
+       MAG_LCTL,       MAG_LGUI, KC_LALT,                                KC_SPC,                                 KC_RGUI,  MO(_FL),  KC_LEFT,  KC_DOWN,  KC_RGHT  \
     ),
     [_FL] = LAYOUT(
        KC_GRV,         KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   __NOP__,  KC_MUTE, \
-       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  KC_PSCR,  KC_SLCK,  KC_PAUS,  __NOP__,  KC_END, \
-       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,            __NOP__,  LSFT(KC_INS), \
-       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,            KC_VOLU,  __NOP__, \
-       _______,        _______,  _______,                                KC_MPLY,                                MO(_KB),  _______,  KC_MPRV,  KC_VOLD,  KC_MNXT  \
+       _______,        KC_7,     KC_8,     KC_9,     __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  KC_PSCR,  KC_SLCK,  KC_PAUS,  __NOP__,  KC_END, \
+       _______,        KC_4,     KC_5,     KC_6,     __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,            KC_MPLY,  LSFT(KC_INS), \
+       _______,        KC_1,     KC_2,     KC_3,     __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,  KC_VOLU,  __NOP__, \
+       _______,        KC_DOT,   KC_0,                                   KC_KP_ENTER,                            MO(_KB),  _______,  KC_MPRV,  KC_VOLD,  KC_MNXT  \
     ),
     [_KB] = LAYOUT(
        __NOP__,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__, \
@@ -108,43 +110,57 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     switch (keycode) {
-       case L_DCY_UP:
+        case MAG_LGUI:
+            if (record->event.pressed) {
+                register_mods( (usb_host_port == USB_HOST_PORT_1) ? MOD_BIT(KC_LGUI) : MOD_BIT(KC_LCTL) );
+            } else {
+                unregister_mods( (usb_host_port == USB_HOST_PORT_1) ? MOD_BIT(KC_LGUI) : MOD_BIT(KC_LCTL) );
+            }
+            return false;
+        case MAG_LCTL:
+            if (record->event.pressed) {
+                register_mods( (usb_host_port == USB_HOST_PORT_1) ? MOD_BIT(KC_LCTL) : MOD_BIT(KC_LGUI) );
+            } else {
+                unregister_mods( (usb_host_port == USB_HOST_PORT_1) ? MOD_BIT(KC_LCTL) : MOD_BIT(KC_LGUI) );
+            }
+            return false;
+        case L_DCY_UP:
             if (record->event.pressed) {
                 if (LED_BOOST_DECAY_STEP > MAX_LED_BOOST_DECAY - led_boost_decay) led_boost_decay = MAX_LED_BOOST_DECAY;
                 else led_boost_decay += LED_BOOST_DECAY_STEP;
             }
             return false;
-       case L_DCY_DN:
+        case L_DCY_DN:
             if (record->event.pressed) {
                 if (LED_BOOST_DECAY_STEP > led_boost_decay) led_boost_decay = MIN_LED_BOOST_DECAY;
                 else led_boost_decay -= LED_BOOST_DECAY_STEP;
             }
             return false;
-       case L_PRP_UP:
+        case L_PRP_UP:
             if (record->event.pressed) {
                 if (LED_BOOST_PROPAGATE_STEP > MAX_LED_BOOST_PROPAGATE - led_boost_propagate) led_boost_propagate = MAX_LED_BOOST_PROPAGATE;
                 else led_boost_propagate += LED_BOOST_PROPAGATE_STEP;
             }
             return false;
-       case L_PRP_DN:
+        case L_PRP_DN:
             if (record->event.pressed) {
                 if (LED_BOOST_PROPAGATE_STEP > led_boost_propagate) led_boost_propagate = MIN_LED_BOOST_PROPAGATE;
                 else led_boost_propagate -= LED_BOOST_PROPAGATE_STEP;
             }
             return false;
-       case L_REF_UP:
+        case L_REF_UP:
             if (record->event.pressed) {
                 if (LED_BOOST_REFRESH_STEP > MAX_LED_BOOST_REFRESH - led_boost_refresh_ms) led_boost_refresh_ms = MAX_LED_BOOST_REFRESH;
                 else led_boost_refresh_ms += LED_BOOST_REFRESH_STEP;
             }
             return false;
-       case L_REF_DN:
+        case L_REF_DN:
             if (record->event.pressed) {
                 if (LED_BOOST_REFRESH_STEP > led_boost_refresh_ms) led_boost_refresh_ms = MIN_LED_BOOST_REFRESH;
                 else led_boost_refresh_ms -= LED_BOOST_REFRESH_STEP;
             }
             return false;
-       case L_BRI:
+        case L_BRI:
             if (record->event.pressed) {
                 if (LED_GCR_STEP > LED_GCR_MAX - gcr_desired) gcr_desired = LED_GCR_MAX;
                 else gcr_desired += LED_GCR_STEP;

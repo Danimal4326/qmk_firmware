@@ -82,7 +82,7 @@ typedef struct rbg_s {
 #define PUR RGB(0xC0, 0x00, 0xC0)
 #define CYA RGB(0x00, 0xC0, 0xC0)
 #define WHT RGB(0xF0, 0xF0, 0xF0)
-#define MAX RGB(0xFF, 0x00, 0x00)
+#define MAX RGB(0xFF, 0xFF, 0xFF)
 
 static const rgb_t CONST_LED_MAP_PORT1[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = {
@@ -94,10 +94,10 @@ static const rgb_t CONST_LED_MAP_PORT1[][MATRIX_ROWS][MATRIX_COLS] = {
     },
     [1] = {
     { GRN,  MAX,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
-    { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
-    { OFF,  OFF,  OFF,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
+    { OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
+    { OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
+    { OFF,  ___,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
+    { OFF,  CYA,  CYA,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
     },
     [2] = {
     { OFF,  MAX,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
@@ -118,9 +118,9 @@ static const rgb_t CONST_LED_MAP_PORT2[][MATRIX_ROWS][MATRIX_COLS] = {
     },
     [1] = {
     { GRN,  RED,  MAX,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
-    { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
+    { OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
+    { OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
+    { OFF,  ___,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
     { OFF,  OFF,  OFF,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
     },
     [2] = {
