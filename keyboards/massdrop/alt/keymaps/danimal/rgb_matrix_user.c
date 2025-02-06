@@ -82,25 +82,25 @@ typedef struct rbg_s {
 #define PUR RGB(0xC0, 0x00, 0xC0)
 #define CYA RGB(0x00, 0xC0, 0xC0)
 #define WHT RGB(0xF0, 0xF0, 0xF0)
-#define MAX RGB(0xFF, 0x00, 0x00)
+#define BRI RGB(0xFF, 0xFF, 0xFF)
 
 static const rgb_t CONST_LED_MAP_PORT1[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = {
-    { RED,  MAX,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  GRN,  GRN,  BLU,  BLU }, 
+    { RED,  BRI,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  GRN,  GRN,  BLU,  BLU }, 
     { BLU,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU },
     { RED,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  ___,  PUR,  BLU },
     { BLU,  ___,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU,  YEL,  BLU },
     { RED,  RED,  RED,  ___,  ___,  ___,  GRN,  ___,  ___,  ___,  RED,  WHT,  YEL,  YEL,  YEL }
     },
     [1] = {
-    { GRN,  MAX,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
-    { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
-    { OFF,  OFF,  OFF,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
+    { GRN,  BRI,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
+    { OFF,  OFF,  OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
+    { OFF,  OFF,  OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
+    { OFF,  ___,  OFF,  OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
+    { OFF,  CYA,  CYA,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
     },
     [2] = {
-    { OFF,  MAX,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
+    { OFF,  BRI,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
     { OFF,  OFF,  YEL,  OFF,  YEL,  YEL,  YEL,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  RED,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  CYA,  OFF,  OFF,  ORN,  GRN,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
@@ -110,21 +110,21 @@ static const rgb_t CONST_LED_MAP_PORT1[][MATRIX_ROWS][MATRIX_COLS] = {
 
 static const rgb_t CONST_LED_MAP_PORT2[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = {
-    { RED,  ORN,  MAX,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  GRN,  GRN,  BLU,  BLU }, 
+    { RED,  ORN,  BRI,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  ORN,  GRN,  GRN,  BLU,  BLU }, 
     { BLU,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU },
     { RED,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  ___,  PUR,  BLU },
     { BLU,  ___,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  GRN,  BLU,  YEL,  BLU },
     { RED,  RED,  RED,  ___,  ___,  ___,  GRN,  ___,  ___,  ___,  RED,  WHT,  YEL,  YEL,  YEL }
     },
     [1] = {
-    { GRN,  RED,  MAX,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
-    { OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
-    { OFF,  ___,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
+    { GRN,  RED,  BRI,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  RED,  OFF,  PUR }, 
+    { OFF,  OFF,  OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  ORN,  ORN,  ORN,  OFF,  RED },
+    { OFF,  OFF,  OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  ___,  OFF,  GRN },
+    { OFF,  ___,  OFF,  OFF,  CYA,  CYA,  CYA,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  PUR,  OFF },
     { OFF,  OFF,  OFF,  ___,  ___,  ___,  CYA,  ___,  ___,  ___,  WHT,  WHT,  CYA,  PUR,  CYA }
     },
     [2] = {
-    { OFF,  OFF,  MAX,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
+    { OFF,  OFF,  BRI,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF }, 
     { OFF,  OFF,  YEL,  OFF,  YEL,  YEL,  YEL,  RED,  RED,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
     { OFF,  OFF,  BLU,  OFF,  BLU,  BLU,  BLU,  OFF,  RED,  OFF,  OFF,  OFF,  ___,  OFF,  OFF },
     { OFF,  ___,  OFF,  CYA,  OFF,  OFF,  ORN,  GRN,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF,  OFF },
