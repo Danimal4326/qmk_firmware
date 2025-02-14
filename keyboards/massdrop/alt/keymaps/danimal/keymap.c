@@ -1,29 +1,35 @@
 #include QMK_KEYBOARD_H
 #include "rgb_matrix_user.h"
 #include "adc.h"
-#include "spi.h"
+#include "shift_register.h"
 
 enum alt_keycodes {
     L_BRI = SAFE_RANGE, //LED Brightness Increase
     L_BRD,              //LED Brightness Decrease
+    L_EDG_I,            //LED Edge Brightness Increase
+    L_EDG_D,            //LED Edge Brightness Decrease
+    L_EDG_M,            //LED Edge lighting mode
     L_PTN,              //LED Pattern Select Next
     L_PTP,              //LED Pattern Select Previous
     L_PSI,              //LED Pattern Speed Increase
     L_PSD,              //LED Pattern Speed Decrease
+    L_RATIOD,
+    L_RATIOI,
     L_T_MD,             //LED Toggle Mode
     L_T_ONF,            //LED Toggle On / Off
     L_ON,               //LED On
     L_OFF,              //LED Off
     L_T_BR,             //LED Toggle Breath Effect
     L_T_PTD,            //LED Toggle Scrolling Pattern Direction
-    U_T_AUTO,           //USB Extra Port Toggle Auto Detect / Always Active
     U_T_AGCR,           //USB Toggle Automatic GCR control
-    KVM_TOG,            //USB Toggle active port
     DBG_TOG,            //DEBUG Toggle On / Off
     DBG_MTRX,           //DEBUG Toggle Matrix Prints
     DBG_KBD,            //DEBUG Toggle Keyboard Prints
     DBG_MOU,            //DEBUG Toggle Mouse Prints
+    DBG_FAC,            //DEBUG Factory light testing (All on white)
     MD_BOOT,            //Restart into bootloader after hold timeout
+    U_T_AUTO,           //USB Extra Port Toggle Auto Detect / Always Active
+    KVM_TOG,            //USB Toggle active port
     L_DCY_UP,           // LED Decay Increase
     L_DCY_DN,           // LED Decay Decrease
     L_PRP_UP,           // LED Propoagate Increase
@@ -32,8 +38,6 @@ enum alt_keycodes {
     L_REF_DN,           // LED Refresh Speed Decrease
 };
 
-#define TG_NKRO MAGIC_TOGGLE_NKRO //Toggle 6KRO / NKRO mode
-//#define ______ KC_TRNS
 #define __NOP__ KC_NO
 #define _BL 0
 #define _FL 1
@@ -47,7 +51,7 @@ void USB_swap_hosts(void);
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BL] = LAYOUT(
-       KC_GESC,        KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_MINS,  KC_EQL,   KC_BSPC,  KC_DEL,  \
+       QK_GESC,        KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_MINS,  KC_EQL,   KC_BSPC,  KC_DEL,  \
        KC_TAB,         KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_LBRC,  KC_RBRC,  KC_BSLS,  KC_HOME, \
        CTL_T(KC_ESC),  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     KC_SCLN,  KC_QUOT,            KC_ENT,   KC_PGUP, \
        KC_LSFT,        KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  KC_RSFT,            KC_UP,    KC_PGDN, \
@@ -55,7 +59,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     [_FL] = LAYOUT(
        KC_GRV,         KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   __NOP__,  KC_MUTE, \
-       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  KC_PSCR,  KC_SLCK,  KC_PAUS,  __NOP__,  KC_END, \
+       _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  KC_PSCR,  KC_SCRL,  KC_PAUS,  __NOP__,  KC_END, \
        _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,            __NOP__,  LSFT(KC_INS), \
        _______,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,            KC_VOLU,  __NOP__, \
        _______,        _______,  _______,                                KC_MPLY,                                MO(_KB),  _______,  KC_MPRV,  KC_VOLD,  KC_MNXT  \
@@ -64,7 +68,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        __NOP__,        __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__, \
        _______,        __NOP__,  L_BRI,    __NOP__,  L_DCY_UP, L_PRP_UP, L_REF_UP, U_T_AUTO, U_T_AGCR, __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  __NOP__, \
        _______,        __NOP__,  L_BRD,    __NOP__,  L_DCY_DN, L_PRP_DN, L_REF_DN, __NOP__,  KVM_TOG,  __NOP__,  __NOP__,  __NOP__,            __NOP__,  __NOP__, \
-       _______,        __NOP__,  L_T_ONF,  __NOP__,  __NOP__,  MD_BOOT,  TG_NKRO,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,            __NOP__,  __NOP__, \
+       _______,        __NOP__,  L_T_ONF,  __NOP__,  __NOP__,  MD_BOOT,  NK_TOGG,  __NOP__,  __NOP__,  __NOP__,  __NOP__,  _______,            __NOP__,  __NOP__, \
        _______,        _______,  _______,                                __NOP__,                                _______,  _______,  __NOP__,  __NOP__,  __NOP__  \
     ),
 };
@@ -91,8 +95,8 @@ void matrix_scan_user(void){};
 
 bool locked = false;
 
-#define MODS_SHIFT  (get_mods() & MOD_BIT(KC_LSHIFT)    || get_mods() & MOD_BIT(KC_RSHIFT)) 
-#define MODS_CTRL   (get_mods() & MOD_BIT(KC_LCTL)      || get_mods() & MOD_BIT(KC_RCTRL))
+#define MODS_SHIFT  (get_mods() & MOD_BIT(KC_LSFT)      || get_mods() & MOD_BIT(KC_RSFT)) 
+#define MODS_CTRL   (get_mods() & MOD_BIT(KC_LCTL)      || get_mods() & MOD_BIT(KC_RCTL))
 #define MODS_ALT    (get_mods() & MOD_BIT(KC_LALT)      || get_mods() & MOD_BIT(KC_RALT))
 #define MODS_GUI    (get_mods() & MOD_BIT(KC_LGUI)      || get_mods() & MOD_BIT(KC_RGUI))
 
@@ -268,7 +272,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-uint32_t layer_state_set_user(uint32_t state) {
+layer_state_t layer_state_set_user(layer_state_t state) {
     switch (biton32(state)) {
         case _BL:
             underglow_rgb = 0x000000;
